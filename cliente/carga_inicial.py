@@ -34,7 +34,7 @@ def headers(token):
 
 
 def cargar_doctor(token, row):
-    """Envía un doctor a la API."""
+    """Envía un doctor a la API, si ya existe obtiene su ID."""
     payload = {
         "nombre": row["nombre"].strip(),
         "especialidad": row["especialidad"].strip(),
@@ -51,12 +51,17 @@ def cargar_doctor(token, row):
         print(f"  >> Doctor creado: {payload['nombre']} (id={id_})")
         return id_
     else:
-        print(f"  >> Doctor no creado ({payload['nombre']}): {resp.json().get('error')}")
+        # si ya existe, buscamos su ID en la lista
+        doctores = requests.get(f"{ADMIN_URL}/admin/doctores", headers=headers(token)).json()
+        doctor = next((d for d in doctores if d["nombre"] == payload["nombre"]), None)
+        if doctor:
+            print(f"  >> Doctor ya existe: {payload['nombre']} (id={doctor['id_doctor']})")
+            return doctor["id_doctor"]
         return None
 
 
 def cargar_paciente(token, row):
-    """Envía un paciente a la API."""
+    """Envía un paciente a la API, si ya existe obtiene su ID."""
     payload = {
         "nombre": row["nombre"].strip(),
         "telefono": row["telefono"].strip(),
@@ -73,12 +78,17 @@ def cargar_paciente(token, row):
         print(f"  >> Paciente creado: {payload['nombre']} (id={id_})")
         return id_
     else:
-        print(f"  >> Paciente no creado ({payload['nombre']}): {resp.json().get('error')}")
+        # si ya existe, buscamos su ID en la lista
+        pacientes = requests.get(f"{ADMIN_URL}/admin/pacientes", headers=headers(token)).json()
+        paciente = next((p for p in pacientes if p["nombre"] == payload["nombre"]), None)
+        if paciente:
+            print(f"  >> Paciente ya existe: {payload['nombre']} (id={paciente['id_paciente']})")
+            return paciente["id_paciente"]
         return None
 
 
 def cargar_centro(token, row):
-    """Envía un centro médico a la API."""
+    """Envía un centro médico a la API, si ya existe obtiene su ID."""
     payload = {
         "nombre": row["nombre"].strip(),
         "direccion": row["direccion"].strip(),
@@ -93,7 +103,12 @@ def cargar_centro(token, row):
         print(f"  >> Centro creado: {payload['nombre']} (id={id_})")
         return id_
     else:
-        print(f"  >> Centro no creado ({payload['nombre']}): {resp.json().get('error')}")
+        # si ya existe, buscamos su ID en la lista
+        centros = requests.get(f"{ADMIN_URL}/admin/centros", headers=headers(token)).json()
+        centro = next((c for c in centros if c["nombre"] == payload["nombre"]), None)
+        if centro:
+            print(f"  >> Centro ya existe: {payload['nombre']} (id={centro['id_centro']})")
+            return centro["id_centro"]
         return None
 
 
