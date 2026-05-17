@@ -50,7 +50,7 @@ def _crear_admin_inicial():
         )
         db.session.add(admin)
         db.session.commit()
-        print("✅ Admin inicial creado: admin / admin123")
+        print("OK - Admin inicial creado: admin / admin123")
 
 
 if __name__ == "__main__":

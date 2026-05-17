@@ -6,7 +6,7 @@ class Cita(db.Model):
     __tablename__ = "citas"
 
     id_cita = db.Column(db.Integer, primary_key=True)
-    fecha = db.Column(db.String(20), nullable=False)  # formato "YYYY-MM-DD HH:MM"
+    fecha = db.Column(db.String(20), nullable=False)  # formato "DD-MM-YYYY HH:MM"
     motivo = db.Column(db.String(300), nullable=False)
     estado = db.Column(db.String(15), default="Programada")  # Programada, Cancelada, Completada
     id_paciente = db.Column(db.Integer, nullable=False)  # no FK porque está en otra base de datos
