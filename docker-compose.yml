@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  service_admin:
+    build: ./service_admin
+    container_name: odontocare_admin
+    ports:
+      - "5000:5000"
+    environment:
+      - SECRET_KEY=odontocare-secret-key-2026-jwt-ok
+      - DATABASE_URL=sqlite:///db_admin.sqlite
+    volumes:
+      - admin_data:/app/instance
+
+  service_citas:
+    build: ./service_citas
+    container_name: odontocare_citas
+    ports:
+      - "5001:5001"
+    environment:
+      - DATABASE_URL=sqlite:///db_citas.sqlite
+      - ADMIN_SERVICE_URL=http://service_admin:5000
+    volumes:
+      - citas_data:/app/instance
+    depends_on:
+      - service_admin
+
+volumes:
+  admin_data:
+  citas_data:
