@@ -39,7 +39,7 @@ def token_required (f):
         auth_header = request.headers.get("Authorization","")
         if not auth_header.startswith("Bearer"):
             return jsonify({"error":"Token requerido"}), 401
-        token = auth_header.split("")[1] # extraemos el token del header
+        token = auth_header.split(" ")[1] # extraemos el token del header
         payload = verify_token(token)
         if not payload:
             return jsonify({"error":"Token inválido o expirado"}), 401
