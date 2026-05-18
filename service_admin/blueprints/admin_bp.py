@@ -16,7 +16,7 @@ def crear_usuario():
     data = request.get_json()
 
     # comprobamos que vienen todos los campos necesarios
-    if not all(data.get(c) for c in ["username", "password", "roll"]):
+    if not all(data.get(c) for c in ["username", "password", "rol"]):
         return jsonify({"error": "username, password y rol son requeridos"}), 400
     
     # solo se pueden crear usuarios admi o secretaria desde aquí
