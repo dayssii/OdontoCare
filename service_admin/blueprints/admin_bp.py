@@ -1,14 +1,13 @@
-# Administración y Gestión de Centros, Pacientes y Doctores (CRUD admin)
-## Importaciones
+# Importaciones
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash # para encriptar contraseñas antes de guardarlas
 from models.models import db, Usuario, Doctor, Paciente, CentroMedico
 from blueprints.auth_bp import role_required # el decorador que creamos en "auth_bp-py" para proteger los endpoints
 
-## Creamos el blueprint de administración
+# Creamos el blueprint de administración
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin") # todas las rutas de este blueprint empezarán por "/admin"
 
-## Endpoints usuarios
+# Endpoints usuarios
 @admin_bp.route("/usuario", methods=["POST"])
 @role_required("admin")
 def crear_usuario():
@@ -25,7 +24,7 @@ def crear_usuario():
     
     # comprobamos que el username no exista ya
     if Usuario.query.filter_by(username=data["username"]).first():
-        return jsonify({"erro": "El username ya existe"}), 409
+        return jsonify({"error": "El username ya existe"}), 409
     
     # creamos el usuario con la contraseña encriptada
     user = Usuario(
@@ -126,7 +125,7 @@ def crear_paciente():
         rol="paciente",
     )
     db.session.add(user)
-    db.session.flush()
+    db.session.flush() # obtenemos el id_usuario antes del commit
 
     # luego creamos el paciente vinculado a ese usuario
     paciente = Paciente(
@@ -156,7 +155,7 @@ def obtener_paciente(id):
     return jsonify(p.to_dict()), 200
 
 
-#  Endpoints Centros médicos
+# Endpoints Centros médicos
 
 @admin_bp.route("/centros", methods=["POST"])
 @role_required("admin")

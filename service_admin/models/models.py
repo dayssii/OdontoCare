@@ -8,7 +8,7 @@ class Usuario(db.Model): # le dice a SQLAlchemy que esta clase es una tabla
     # cada db.Colum es una columna de esta tabla
     id_usuario = db.Column(db.Integer, primary_key=True) # el ID único de cada fila
     username = db.Column(db.String(80), unique=True, nullable=False) # indica que este campo no puede estar vacío
-    password = db.Column(db.String(256), nullable=False)
+    password = db.Column(db.String(256), nullable=False) # siempre guardamos la contraseña encriptada
     rol = db.Column(db.String(20), nullable=False)  # admin, medico, secretaria, paciente
 
     def to_dict(self): # convierte el objeto a JSON para devolverlo en la API
@@ -23,11 +23,13 @@ class Doctor(db.Model):
     __tablename__ = "doctores"
 
     id_doctor = db.Column(db.Integer, primary_key=True)
+    # relación con la tabla usuarios
     id_usuario = db.Column(db.Integer, db.ForeignKey("usuarios.id_usuario"), nullable=True)
     nombre = db.Column(db.String(120), nullable=False)
     especialidad = db.Column(db.String(120), nullable=False)
 
     def to_dict(self):
+        """Convierte el objeto a diccionario para devolverlo como JSON."""
         return {
             "id_doctor": self.id_doctor,
             "nombre": self.nombre,
@@ -43,9 +45,10 @@ class Paciente(db.Model):
     id_usuario = db.Column(db.Integer, db.ForeignKey("usuarios.id_usuario"), nullable=True)
     nombre = db.Column(db.String(120), nullable=False)
     telefono = db.Column(db.String(20), nullable=False)
-    estado = db.Column(db.String(10), default="ACTIVO")  # ACTIVO o INACTIVO
+    estado = db.Column(db.String(10), default="ACTIVO")  # ACTIVO o INACTIVO, solo los ACTIVOS pueden tener citas
 
     def to_dict(self):
+        """Convierte el objeto a diccionario para devolverlo como JSON."""
         return {
             "id_paciente": self.id_paciente,
             "nombre": self.nombre,
@@ -64,6 +67,7 @@ class CentroMedico(db.Model):
     direccion = db.Column(db.String(200), nullable=False)
 
     def to_dict(self):
+        """Convierte el objeto a diccionario para devolverlo como JSON."""
         return {
             "id_centro": self.id_centro,
             "nombre": self.nombre,

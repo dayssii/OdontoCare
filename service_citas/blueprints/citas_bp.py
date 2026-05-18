@@ -1,18 +1,18 @@
-# Gestión operativa de citas
-## Importaciones
+# Importaciones
 import os
 import requests
 from flask import Blueprint, request, jsonify
 from models.models import db, Cita
 
-## URL del servicio admin, se configura por variable de entorno
+# URL del servicio admin, se configura por variable de entorno
+# en Docker será http://service_admin:5000, en local http://localhost:5000
 ADMIN_SERVICE_URL = os.environ.get("ADMIN_SERVICE_URL", "http://localhost:5000")
 
-## Creamos el blueprint de citas
+# Creamos el blueprint de citas
 citas_bp = Blueprint("citas", __name__, url_prefix="/citas")
 
 
-## Funciones helper que llaman al servicio admin para validar datos
+# Funciones helper que llaman al servicio admin para validar datos
 def _get_headers():
     """Pasa el token del usuario actual al servicio admin."""
     return {"Authorization": request.headers.get("Authorization", "")}
@@ -56,7 +56,7 @@ def verificar_centro(id_centro):
         return None
 
 
-## Endpoints: POST/ citas (Agendar cita)
+# Endpoints: POST/ citas (Agendar cita)
 @citas_bp.route("", methods=["POST"])
 def agendar_cita():
     """Agenda una nueva cita médica."""
@@ -86,14 +86,14 @@ def agendar_cita():
     if conflicto:
         return jsonify({"error": "El doctor ya tiene una cita en esa fecha y hora"}), 409
 
-    # creamos la cita
+    # creamos la cita en la base de datos de service_citas
     cita = Cita(
         fecha=data["fecha"],
         motivo=data["motivo"],
         id_paciente=data["id_paciente"],
         id_doctor=data["id_doctor"],
         id_centro=data["id_centro"],
-        id_usuario_registra=1,  # por ahora fijo, luego lo sacaremos del token
+        id_usuario_registra=1, 
         estado="Programada",
     )
     db.session.add(cita)
@@ -101,13 +101,13 @@ def agendar_cita():
     return jsonify({"mensaje": "Cita agendada correctamente", "cita": cita.to_dict()}), 201
 
 
-## Endpoints: GET / citas (Listar citas)
+# Endpoints: GET / citas (Listar citas)
 @citas_bp.route("", methods=["GET"])
 def listar_citas():
     """Lista todas las citas con filtros opcionales."""
     query = Cita.query
 
-    # filtros por query params
+    # aplicamos filtros por query params
     for filtro, columna in [
         ("id_doctor", Cita.id_doctor),
         ("id_centro", Cita.id_centro),
@@ -127,7 +127,7 @@ def listar_citas():
     return jsonify([c.to_dict() for c in citas]), 200
 
 
-## Endpoints: GET/ citas/<id> (Detalle de cita)
+# Endpoints: GET/ citas/<id> (Detalle de cita)
 @citas_bp.route("/<int:id>", methods=["GET"])
 def obtener_cita(id):
     """Devuelve una cita por su ID."""
@@ -135,12 +135,13 @@ def obtener_cita(id):
     return jsonify(cita.to_dict()), 200
 
 
-## Endpoints: PUT / citas/<id> (Cancelar cita)
+# Endpoints: PUT / citas/<id> (Cancelar cita)
 @citas_bp.route("/<int:id>", methods=["PUT"])
 def cancelar_cita(id):
-    """Cancela una cita existente."""
+    """Cancela una cita existente cambiando su estado a 'Cancelada'."""
     cita = Cita.query.get_or_404(id, description="Cita no encontrada")
 
+    # no se puede cancelar una cita que ya está cancelada
     if cita.estado == "Cancelada":
         return jsonify({"error": "La cita ya está cancelada"}), 400
 

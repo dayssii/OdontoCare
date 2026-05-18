@@ -1,5 +1,4 @@
-# Gestiona login y los tokens JWT
-## Importaciones
+# Importaciones
 import os
 from datetime import datetime, timedelta, timezone
 from functools import wraps
@@ -8,9 +7,9 @@ from flask import Blueprint, request, jsonify # Blueprint nos permite agrupar ru
 from werkzeug.security import generate_password_hash, check_password_hash # encriptamos las contraseñas, nunca en texto plano
 from models.models import db, Usuario 
 
-## Creamos el blue print de autenticación
+# Creamos el blue print de autenticación
 auth_bp = Blueprint ("auth", __name__, url_prefix="/auth") # agrupa todas las rutas de autenticación bajo "/auth"
-## Clave secreta para firmar los tokens JWT
+# Clave secreta para firmar los tokens JWT
 SECRET_KEY = os.environ.get("SECRET_KEY","odontocare-secret-key-2026-jwt-ok")
 
 def generate_token(user): # crea un token con el id, username y rol del usuario, válido 8 horas
@@ -33,7 +32,7 @@ def verify_token(token): # comprueba si el token es válido, si no devuelve "Non
         return None # token inválido
     
 def token_required (f): 
-    """Protege un endpoint exigiendo un token válido en el header."""
+    """Protege un endpoint exigiendo un token válido en el header. Comprueba que el header Authorization: Bearer <token> existe y es válido."""
     @wraps(f)
     def decorated(*args,**kwargs): # Comprueba que el header "Authorization: Bearer <token> existe y es válido"
         auth_header = request.headers.get("Authorization","")
@@ -49,10 +48,10 @@ def token_required (f):
 
 def role_required(*roles): 
     """Protege un endpoint exigiendo además un rol específico."""
-    def decorator(f): # Comprueba que el rol del usuario es el permitido 
+    def decorator(f): 
         @wraps(f)
-        @token_required
-        def decorated(*args, **kwargs):
+        @token_required # valida el token
+        def decorated(*args, **kwargs): # comprueba que el rol del usuario es el permitido 
             if request.current_user["rol"] not in roles:
                 return jsonify({"error": "Acceso denegado: rol insuficiente"}), 403
             return f(*args, **kwargs)
@@ -60,7 +59,7 @@ def role_required(*roles):
     return decorator
     
 
-## Endpoints
+# Endpoints
 @auth_bp.route("/login", methods=["POST"]) # recibe username y password, devuelve el token JWT
 def login():
     """Recibe username y password, devuelve JWT si las credenciales son válidas."""
@@ -77,7 +76,7 @@ def login():
     if not user or not check_password_hash(user.password, data["password"]):
         return jsonify({"error": "Credenciales incorrectas"}), 401
 
-    # generamos el token y lo devolvemos
+    # generamos el token y lo devolvemos junto el rol y username
     token = generate_token(user)
     return jsonify({"token": token, "rol": user.rol, "username": user.username}), 200
 
