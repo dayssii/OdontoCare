@@ -104,27 +104,73 @@ def agendar_cita():
 # Endpoints: GET / citas (Listar citas)
 @citas_bp.route("", methods=["GET"])
 def listar_citas():
-    """Lista todas las citas con filtros opcionales."""
+    """Lista todas las citas según el rol del usuario.
+    - Admin: puede filtrar por doctor, centro, paciente, estado y fecha
+    - Secretaria: solo puede filtrar por fecha
+    - Medico: solo ve sus propias citas
+    - Paciente: solo ve sus propias citas
+    """
+    # obtenemos el token para identificar el rol de usuario
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Token requerido"}), 401
+
+    # verificamos el token llamando al service_admin
+    try:
+        r = requests.get(
+            f"{ADMIN_SERVICE_URL}/auth/verificar",
+            headers={"Authorization": auth_header},
+            timeout=5
+        )
+        if r.status_code != 200:
+            return jsonify({"error": "Token inválido"}), 401
+        user = r.json()["user"]
+    except Exception:
+        return jsonify({"error": "Error conectando con service_admin"}), 503
+
     query = Cita.query
+    rol = user["rol"]
 
-    # aplicamos filtros por query params
-    for filtro, columna in [
-        ("id_doctor", Cita.id_doctor),
-        ("id_centro", Cita.id_centro),
-        ("id_paciente", Cita.id_paciente),
-        ("estado", Cita.estado),
-    ]:
-        valor = request.args.get(filtro)
-        if valor:
-            query = query.filter(columna == valor)
+    if rol == "medico":
+        # el doctor solo ve sus propias citas
+        query = query.filter(Cita.id_doctor == user["id_usuario"])
 
-    # filtro por fecha parcial (ej: 2025-09)
-    fecha = request.args.get("fecha")
-    if fecha:
-        query = query.filter(Cita.fecha.startswith(fecha))
+    elif rol == "paciente":
+        # el paciente solo ve sus propias citas
+        query = query.filter(Cita.id_paciente == user["id_usuario"])
 
-    citas = query.all()
-    return jsonify([c.to_dict() for c in citas]), 200
+    elif rol == "secretaria":
+        # la secretaria solo puede filtrar por fecha
+        fecha = request.args.get("fecha")
+        if fecha:
+            query = query.filter(Cita.fecha.startswith(fecha))
+
+    elif rol == "admin":
+        # el admin puede filtrar por cualquier campo
+        for filtro, columna in [
+            ("id_doctor", Cita.id_doctor),
+            ("id_centro", Cita.id_centro),
+            ("id_paciente", Cita.id_paciente),
+            ("estado", Cita.estado),
+        ]:
+            valor = request.args.get(filtro)
+            if valor:
+                query = query.filter(columna == valor)
+        fecha = request.args.get("fecha")
+        if fecha:
+            query = query.filter(Cita.fecha.startswith(fecha))
+
+    # paginación
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
+    paginado = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    return jsonify({
+        "total": paginado.total,
+        "pagina": paginado.page,
+        "paginas": paginado.pages,
+        "citas": [c.to_dict() for c in paginado.items],
+    }), 200
 
 
 # Endpoints: GET/ citas/<id> (Detalle de cita)
